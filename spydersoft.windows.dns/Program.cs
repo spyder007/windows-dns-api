@@ -116,7 +116,7 @@ app.MapGet("/dns",
             IEnumerable<DnsRecord>? dnsRecords = await commandService.GetDnsRecords(zoneName);
             return dnsRecords != null ? Results.Ok(dnsRecords) : Results.BadRequest();
         })
-    .WithName("GetVirtualMachines").WithDisplayName("Retrieve the list of Virtual Machines").WithTags("VM");
+    .WithName("GetDnsRecords").WithDisplayName("Retrieve the list of DNS A/AAAA/CNAME Records").WithTags("DNS");
 
 app.MapGet("/dns/{hostName}", async (ILogger<Program> log, IDnsService commandService, [FromRoute] string hostName, [FromQuery] string? zoneName) =>
     {
@@ -124,7 +124,7 @@ app.MapGet("/dns/{hostName}", async (ILogger<Program> log, IDnsService commandSe
         var dnsRecord = await commandService.GetRecord(hostName, zoneName);
         return dnsRecord == null ? Results.NotFound() : Results.Ok(dnsRecord);
     })
-    .WithName("UpdateVirtualMachine").WithDisplayName("Update VM Details").WithTags("VM");
+    .WithName("GetDnsRecord").WithDisplayName("Get DNS Records based on Host Name").WithTags("DNS");
 
 app.MapPost("/dns", async (ILogger<Program> log, IDnsService commandService, IValidator<DnsRecord> validator, [FromBody] DnsRecord record) =>
 {
@@ -137,6 +137,14 @@ app.MapPost("/dns", async (ILogger<Program> log, IDnsService commandService, IVa
 
     var newRecord = await commandService.UpdateRecord(record);
     return newRecord != null ? Results.Created($"/dns/{newRecord.HostName}?zoneName={newRecord.ZoneName}", newRecord) : Results.BadRequest();
-});
+}).WithName("UpdateHost").WithDisplayName("Update Host Name Record").WithTags("DNS");
+
+app.MapDelete("/dns/{hostName}", async (ILogger<Program> log, IDnsService commandService, string hostName, [FromQuery] string? zoneName) =>
+{
+    log.LogInformation("Deleting DnsRecords for {hostName}", hostName);
+    var success = await commandService.DeleteRecord(hostName, zoneName);
+    return success ? Results.Accepted() : Results.BadRequest();
+}).WithName("UpdateHost").WithDisplayName("Update Host Name Record").WithTags("DNS");
+
 
 app.Run();

@@ -23,9 +23,9 @@
     "/dns": {
       "get": {
         "tags": [
-          "VM"
+          "DNS"
         ],
-        "operationId": "GetVirtualMachines",
+        "operationId": "GetDnsRecords",
         "parameters": [
           {
             "name": "zoneName",
@@ -44,7 +44,10 @@
         }
       },
       "post": {
-        "operationId": "PostDns",
+        "tags": [
+          "DNS"
+        ],
+        "operationId": "UpdateHostPOST",
         "requestBody": {
           "x-name": "DnsRecord",
           "description": "",
@@ -68,9 +71,41 @@
     "/dns/{hostName}": {
       "get": {
         "tags": [
-          "VM"
+          "DNS"
         ],
-        "operationId": "UpdateVirtualMachine",
+        "operationId": "GetDnsRecord",
+        "parameters": [
+          {
+            "name": "hostName",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "x-position": 1
+          },
+          {
+            "name": "zoneName",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "x-position": 2
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "DNS"
+        ],
+        "operationId": "UpdateHostDELETE",
         "parameters": [
           {
             "name": "hostName",
