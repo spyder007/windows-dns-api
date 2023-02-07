@@ -144,7 +144,7 @@ app.MapDelete("/dns/{hostName}", async (ILogger<Program> log, IDnsService comman
     log.LogInformation("Deleting DnsRecords for {hostName}", hostName);
     var success = await commandService.DeleteRecord(hostName, zoneName);
     return success ? Results.Accepted() : Results.BadRequest();
-}).WithName("UpdateHost").WithDisplayName("Update Host Name Record").WithTags("DNS");
+}).WithName("DeleteHost").WithDisplayName("Delete Host Name Record").WithTags("DNS");
 
 
 app.Run();
