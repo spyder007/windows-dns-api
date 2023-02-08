@@ -47,7 +47,31 @@
         "tags": [
           "DNS"
         ],
-        "operationId": "UpdateHostPOST",
+        "operationId": "UpdateHost",
+        "requestBody": {
+          "x-name": "DnsRecord",
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DnsRecord"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "DNS"
+        ],
+        "operationId": "DeleteHost",
         "requestBody": {
           "x-name": "DnsRecord",
           "description": "",
@@ -74,38 +98,6 @@
           "DNS"
         ],
         "operationId": "GetDnsRecord",
-        "parameters": [
-          {
-            "name": "hostName",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "nullable": true
-            },
-            "x-position": 1
-          },
-          {
-            "name": "zoneName",
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "nullable": true
-            },
-            "x-position": 2
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "DNS"
-        ],
-        "operationId": "UpdateHostDELETE",
         "parameters": [
           {
             "name": "hostName",

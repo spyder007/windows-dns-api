@@ -15,7 +15,7 @@ namespace spydersoft.windows.dns.Services
 {
     public class DnsService : IDnsService
     {
-        private const string GetDnsRecordsTemplate = "Get-DnsServerResourceRecord -zonename {0} -ComputerName {1} | ?{{ $_.RecordType -in \"A\", \"AAAA\", \"CNAME\" }} {2}";
+        private const string GetDnsRecordsTemplate = "Get-DnsServerResourceRecord -zonename {0} -ComputerName {1} | ?{{ $_.RecordType -in \"A\", \"AAAA\", \"CNAME\" }}";
 
         private const string GetDnsRecordTemplate = "Get-DnsServerResourceRecord -zonename {0} -ComputerName {1} -Name {2} {3}";
 
@@ -27,8 +27,13 @@ namespace spydersoft.windows.dns.Services
 
         private const string CreateDnsCNAMERecordTemplate = "Add-DnsServerResourceRecordA -Name \"{2}\" -zoneName {0} -allowupdateany -HostNameAlias \"{3}\" -ComputerName {1}";
 
-        private const string DeleteByHostnameTemplate =
-            "Get-DnsServerResourceRecord -zonename {0} -ComputerName {1} -name {2} | Remove-DnsServerResourceRecord -zonename {0} -computername {1} -Force";
+        private const string GetDnsARecordTemplate = "Get-DnsServerResourceRecord -zonename {0} -ComputerName {1} -name {2} -RRType A | ? {{$_.RecordData.IPv4Address -eq \"{3}\"}}";
+
+        private const string GetDnsAAAARecordTemplate = "Get-DnsServerResourceRecord -zonename {0} -ComputerName {1} -name {2} -RRType AAAA | ? {{$_.RecordData.IPv6Address -eq \"{3}\"}}";
+
+        private const string GetDnsCNAMERecordTemplate = "Get-DnsServerResourceRecord -zonename {0} -ComputerName {1} -name {2} -RRType CNAME | ? {{$_.RecordData.HostNameAlias -eq \"{3}\"}}";
+
+        private const string DeleteDnsRecordTemplate = "{2} | Remove-DnsServerResourceRecord -zonename {0} -computername {1} -Force";
 
         private const string RefreshAutomaticStartDelayTemplate = "Get-VM | Select Name, State, AutomaticStartDelay, @{{n='startGroup';e= {{(ConvertFrom-Json $_.Notes).startGroup}}}}, @{{n='delayOffset';e= {{(ConvertFrom-Json $_.Notes).delayOffset}}}} |? {{$_.startGroup -gt 0}} | % {{ Set-VM -name $_.name -AutomaticStartDelay ((($_.startGroup - 1) * {0}) + $_.delayOffset) }}";
 
@@ -45,16 +50,15 @@ namespace spydersoft.windows.dns.Services
             _dnsOptions = options.Value;
         }
 
-        public async Task<DnsRecord?> UpdateRecord(DnsRecord record)
+        public async Task<DnsRecord?> CreateRecord(DnsRecord record)
         {
-            var existingRecord = await GetRecord(record.HostName, record.ZoneName);
+            var existingRecord = await GetRecord(record);
 
             if (existingRecord != null)
             {
-                await DeleteRecord(record.HostName, record.ZoneName);
+                return existingRecord;
             }
-
-
+            
             string command = GetCreateCommandForRecord(record);
 
             if (string.IsNullOrWhiteSpace(command))
@@ -66,7 +70,7 @@ namespace spydersoft.windows.dns.Services
             try
             {
                 var success = await _executor.ExecuteCommand(command);
-                return success ? await GetRecord(record.HostName, record.ZoneName) : null;
+                return success ? await GetRecord(record) : null;
 
             }
             catch (Exception e)
@@ -79,6 +83,120 @@ namespace spydersoft.windows.dns.Services
 
         }
 
+        public async Task<bool> DeleteRecord(DnsRecord record)
+        {
+            var recordQuery = GetRecordQueryCommandForRecord(record, false);
+            var deleteCommand = string.Format(DeleteDnsRecordTemplate, record.ZoneName, _dnsOptions.DnsServerName,
+                recordQuery);
+
+            try
+            {
+                return await _executor.ExecuteCommand(deleteCommand);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Error Updating DNS Records");
+                return false;
+            }
+        }
+
+        public async Task<DnsRecord?> GetRecord(DnsRecord record)
+        {
+            string command = GetRecordQueryCommandForRecord(record, true);
+
+            try
+            {
+                var pipelineObjects = await _executor.ExecuteCommandAndGetPipeline(command);
+                _logger.LogDebug("Found {0} objects", pipelineObjects.Count);
+                if (pipelineObjects.Count == 0)
+                {
+                    return null;
+                }
+
+                var dnsRecords = pipelineObjects.Select(psRecord => BuildDnsRecordFromObject(record.ZoneName, psRecord));
+
+                return dnsRecords.First();
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Error retrieving DNS Record");
+            }
+
+            return null;
+        }
+
+        public async Task<IEnumerable<DnsRecord>?> GetRecords(string? zoneName)
+        {
+            string zone = string.IsNullOrWhiteSpace(zoneName) ? _dnsOptions.DefaultZone : zoneName;
+
+            try
+            {
+                var command = string.Format(GetDnsRecordsTemplate, zone, _dnsOptions.DnsServerName) +
+                              DnsRecordExpansion;
+
+                var pipelineObjects = await _executor.ExecuteCommandAndGetPipeline(command);
+                _logger.LogDebug("Found {0} objects", pipelineObjects.Count);
+                var dnsRecords = pipelineObjects.Select(record => BuildDnsRecordFromObject(zone, record));
+
+                return dnsRecords;
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Error retrieving DNS Records");
+            }
+
+            return null;
+        }
+
+        public async Task<IEnumerable<DnsRecord>?> GetRecordsByHostname(string hostName, string? zoneName)
+        {
+            string zone = string.IsNullOrWhiteSpace(zoneName) ? _dnsOptions.DefaultZone : zoneName;
+
+            try
+            {
+                var pipelineObjects = await _executor.ExecuteCommandAndGetPipeline(string.Format(GetDnsRecordTemplate, zone, _dnsOptions.DnsServerName, hostName, DnsRecordExpansion));
+                _logger.LogDebug("Found {0} objects", pipelineObjects.Count);
+                if (pipelineObjects.Count == 0)
+                {
+                    return null;
+                }
+
+                var dnsRecords = pipelineObjects.Select(record => BuildDnsRecordFromObject(zone, record));
+
+                return dnsRecords;
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Error retrieving DNS Record");
+            }
+
+            return null;
+        }
+
+        private string GetRecordQueryCommandForRecord(DnsRecord record, bool expand)
+        {
+            string template = "";
+            switch (record.RecordType)
+            {
+                case DnsRecordType.A:
+                    template = GetDnsARecordTemplate;
+                    break;
+
+                case DnsRecordType.AAAA:
+                    template = GetDnsAAAARecordTemplate;
+                    break;
+
+                case DnsRecordType.CNAME:
+                    template = GetDnsCNAMERecordTemplate;
+                    break;
+            }
+            var command = !string.IsNullOrWhiteSpace(template) ? string.Format(template, record.ZoneName, _dnsOptions.DnsServerName, record.HostName, record.Data) : string.Empty;
+            if (expand)
+            {
+                command += DnsRecordExpansion;
+            }
+            return command;
+        }
         private string GetCreateCommandForRecord(DnsRecord record)
         {
             string template = "";
@@ -97,67 +215,6 @@ namespace spydersoft.windows.dns.Services
                     break;
             }
             return !string.IsNullOrWhiteSpace(template) ? string.Format(template, record.ZoneName, _dnsOptions.DnsServerName, record.HostName, record.Data) : string.Empty;
-        }
-
-        public async Task<bool> DeleteRecord( string hostName, string? zoneName)
-        {
-            var zone = string.IsNullOrWhiteSpace(zoneName) ? _dnsOptions.DefaultZone : zoneName;
-            var command = string.Format(DeleteByHostnameTemplate, zone, _dnsOptions.DnsServerName, hostName);
-
-            try
-            {
-                return await _executor.ExecuteCommand(command);
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(e, "Error Updating DNS Records");
-                return false;
-            }
-        }
-
-        public async Task<IEnumerable<DnsRecord>?> GetDnsRecords(string? zoneName)
-        {
-            string zone = string.IsNullOrWhiteSpace(zoneName) ? _dnsOptions.DefaultZone : zoneName;
-
-            try
-            {
-                var pipelineObjects = await _executor.ExecuteCommandAndGetPipeline(string.Format(GetDnsRecordsTemplate, zone, _dnsOptions.DnsServerName, DnsRecordExpansion));
-                _logger.LogDebug("Found {0} objects", pipelineObjects.Count);
-                var dnsRecords = pipelineObjects.Select(record => BuildDnsRecordFromObject(zone, record));
-
-                return dnsRecords;
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(e, "Error retrieving DNS Records");
-            }
-
-            return null;
-        }
-
-        public async Task<DnsRecord?> GetRecord(string hostName, string? zoneName)
-        {
-            string zone = string.IsNullOrWhiteSpace(zoneName) ? _dnsOptions.DefaultZone : zoneName;
-
-            try
-            {
-                var pipelineObjects = await _executor.ExecuteCommandAndGetPipeline(string.Format(GetDnsRecordTemplate, zone, _dnsOptions.DnsServerName, hostName, DnsRecordExpansion));
-                _logger.LogDebug("Found {0} objects", pipelineObjects.Count);
-                if (pipelineObjects.Count == 0)
-                {
-                    return null;
-                }
-
-                var dnsRecords = pipelineObjects.Select(record => BuildDnsRecordFromObject(zone, record));
-
-                return dnsRecords.First();
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(e, "Error retrieving DNS Record");
-            }
-
-            return null;
         }
 
         private DnsRecord BuildDnsRecordFromObject(string zoneName, PSObject record)

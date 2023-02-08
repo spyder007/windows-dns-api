@@ -4,12 +4,14 @@ namespace spydersoft.windows.dns.Services
 {
     public interface IDnsService
     {
-        Task<IEnumerable<DnsRecord>?> GetDnsRecords(string? zoneName);
+        Task<IEnumerable<DnsRecord>?> GetRecords(string? zoneName);
 
-        Task<bool> DeleteRecord(string hostName, string? zoneName);
+        Task<bool> DeleteRecord(DnsRecord record);
 
-        Task<DnsRecord?> GetRecord(string hostName, string? zoneName);
+        Task<IEnumerable<DnsRecord>?> GetRecordsByHostname(string hostName, string? zoneName);
 
-        Task<DnsRecord?> UpdateRecord(DnsRecord record);
+        Task<DnsRecord?> GetRecord(DnsRecord record);
+
+        Task<DnsRecord?> CreateRecord(DnsRecord record);
     }
 }

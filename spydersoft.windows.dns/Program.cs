@@ -113,7 +113,7 @@ app.MapGet("/dns",
         {
             log.LogInformation("Fielding DNS Records Request (/dns)");
 
-            IEnumerable<DnsRecord>? dnsRecords = await commandService.GetDnsRecords(zoneName);
+            IEnumerable<DnsRecord>? dnsRecords = await commandService.GetRecords(zoneName);
             return dnsRecords != null ? Results.Ok(dnsRecords) : Results.BadRequest();
         })
     .WithName("GetDnsRecords").WithDisplayName("Retrieve the list of DNS A/AAAA/CNAME Records").WithTags("DNS");
@@ -121,28 +121,33 @@ app.MapGet("/dns",
 app.MapGet("/dns/{hostName}", async (ILogger<Program> log, IDnsService commandService, [FromRoute] string hostName, [FromQuery] string? zoneName) =>
     {
         log.LogInformation("Fielding DNS Record Request for  {hostName} in zone {zoneName}", hostName, zoneName);
-        var dnsRecord = await commandService.GetRecord(hostName, zoneName);
+        var dnsRecord = await commandService.GetRecordsByHostname(hostName, zoneName);
         return dnsRecord == null ? Results.NotFound() : Results.Ok(dnsRecord);
     })
     .WithName("GetDnsRecord").WithDisplayName("Get DNS Records based on Host Name").WithTags("DNS");
 
 app.MapPost("/dns", async (ILogger<Program> log, IDnsService commandService, IValidator<DnsRecord> validator, [FromBody] DnsRecord record) =>
 {
-    log.LogInformation("Updating DnsRecord");
+    log.LogInformation("Creating DnsRecord");
     var validationResult = await validator.ValidateAsync(record);
     if (!validationResult.IsValid)
     {
         return Results.ValidationProblem(validationResult.ToDictionary());
     }
 
-    var newRecord = await commandService.UpdateRecord(record);
+    var newRecord = await commandService.CreateRecord(record);
     return newRecord != null ? Results.Created($"/dns/{newRecord.HostName}?zoneName={newRecord.ZoneName}", newRecord) : Results.BadRequest();
 }).WithName("UpdateHost").WithDisplayName("Update Host Name Record").WithTags("DNS");
 
-app.MapDelete("/dns/{hostName}", async (ILogger<Program> log, IDnsService commandService, string hostName, [FromQuery] string? zoneName) =>
+app.MapDelete("/dns", async (ILogger<Program> log, IDnsService commandService, IValidator<DnsRecord> validator, [FromBody] DnsRecord record) =>
 {
-    log.LogInformation("Deleting DnsRecords for {hostName}", hostName);
-    var success = await commandService.DeleteRecord(hostName, zoneName);
+    log.LogInformation("Deleting DnsRecord");
+    var validationResult = await validator.ValidateAsync(record);
+    if (!validationResult.IsValid)
+    {
+        return Results.ValidationProblem(validationResult.ToDictionary());
+    }
+    var success = await commandService.DeleteRecord(record);
     return success ? Results.Accepted() : Results.BadRequest();
 }).WithName("DeleteHost").WithDisplayName("Delete Host Name Record").WithTags("DNS");
 
