@@ -15,7 +15,14 @@
         "operationId": "info",
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           }
         }
       }
@@ -39,7 +46,17 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DnsRecord"
+                  }
+                }
+              }
+            }
           }
         }
       },
@@ -47,7 +64,7 @@
         "tags": [
           "DNS"
         ],
-        "operationId": "UpdateHost",
+        "operationId": "CreateRecord",
         "requestBody": {
           "x-name": "DnsRecord",
           "description": "",
@@ -62,7 +79,17 @@
           "x-position": 1
         },
         "responses": {
-          "200": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DnsRecord"
+                }
+              }
+            }
+          },
+          "400": {
             "description": ""
           }
         }
@@ -71,7 +98,7 @@
         "tags": [
           "DNS"
         ],
-        "operationId": "DeleteHost",
+        "operationId": "DeleteRecord",
         "requestBody": {
           "x-name": "DnsRecord",
           "description": "",
@@ -86,7 +113,10 @@
           "x-position": 1
         },
         "responses": {
-          "200": {
+          "202": {
+            "description": ""
+          },
+          "400": {
             "description": ""
           }
         }
@@ -97,7 +127,7 @@
         "tags": [
           "DNS"
         ],
-        "operationId": "GetDnsRecord",
+        "operationId": "GetRecordByHostname",
         "parameters": [
           {
             "name": "hostName",
@@ -121,6 +151,58 @@
         ],
         "responses": {
           "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DnsRecord"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/dns/bulk": {
+      "post": {
+        "tags": [
+          "DNS"
+        ],
+        "operationId": "CreateDnsRecords",
+        "requestBody": {
+          "x-name": "BulkRecordRequest",
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkRecordRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DnsRecord"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
             "description": ""
           }
         }
@@ -160,6 +242,18 @@
           "AAAA",
           "CNAME"
         ]
+      },
+      "BulkRecordRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "records": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DnsRecord"
+            }
+          }
+        }
       }
     }
   }

@@ -106,7 +106,7 @@ app.MapGet("/info", async (ILogger<Program> log) =>
     }
 
     return Results.Ok(version);
-}).WithName("info").WithDisplayName("Retrieve Application Info").WithTags("Info");
+}).WithName("info").WithDisplayName("Retrieve Application Info").WithTags("Info").Produces<string>();
 
 app.MapGet("/dns",
         async (ILogger<Program> log, IDnsService commandService, string? zoneName) =>
@@ -116,7 +116,10 @@ app.MapGet("/dns",
             IEnumerable<DnsRecord>? dnsRecords = await commandService.GetRecords(zoneName);
             return dnsRecords != null ? Results.Ok(dnsRecords) : Results.BadRequest();
         })
-    .WithName("GetDnsRecords").WithDisplayName("Retrieve the list of DNS A/AAAA/CNAME Records").WithTags("DNS");
+    .WithName("GetDnsRecords")
+    .WithDisplayName("Retrieve the list of DNS A/AAAA/CNAME Records")
+    .WithTags("DNS")
+    .Produces<IEnumerable<DnsRecord>>();
 
 app.MapGet("/dns/{hostName}", async (ILogger<Program> log, IDnsService commandService, [FromRoute] string hostName, [FromQuery] string? zoneName) =>
     {
@@ -124,20 +127,66 @@ app.MapGet("/dns/{hostName}", async (ILogger<Program> log, IDnsService commandSe
         var dnsRecord = await commandService.GetRecordsByHostname(hostName, zoneName);
         return dnsRecord == null ? Results.NotFound() : Results.Ok(dnsRecord);
     })
-    .WithName("GetDnsRecord").WithDisplayName("Get DNS Records based on Host Name").WithTags("DNS");
+    .WithName("GetRecordByHostname")
+    .WithDisplayName("Get DNS Records based on Host Name")
+    .WithTags("DNS")
+    .Produces<IEnumerable<DnsRecord>>()
+    .Produces(StatusCodes.Status404NotFound);
 
-app.MapPost("/dns", async (ILogger<Program> log, IDnsService commandService, IValidator<DnsRecord> validator, [FromBody] DnsRecord record) =>
-{
-    log.LogInformation("Creating DnsRecord");
-    var validationResult = await validator.ValidateAsync(record);
-    if (!validationResult.IsValid)
-    {
-        return Results.ValidationProblem(validationResult.ToDictionary());
-    }
+app.MapPost("/dns",
+        async (ILogger<Program> log, IDnsService commandService, IValidator<DnsRecord> validator,
+            [FromBody] DnsRecord record) =>
+        {
+            log.LogInformation("Creating DnsRecord");
+            var validationResult = await validator.ValidateAsync(record);
+            if (!validationResult.IsValid)
+            {
+                return Results.ValidationProblem(validationResult.ToDictionary());
+            }
 
-    var newRecord = await commandService.CreateRecord(record);
-    return newRecord != null ? Results.Created($"/dns/{newRecord.HostName}?zoneName={newRecord.ZoneName}", newRecord) : Results.BadRequest();
-}).WithName("UpdateHost").WithDisplayName("Update Host Name Record").WithTags("DNS");
+            var newRecord = await commandService.CreateRecord(record);
+            return newRecord != null
+                ? Results.Created($"/dns/{newRecord.HostName}?zoneName={newRecord.ZoneName}", newRecord)
+                : Results.BadRequest();
+        })
+    .WithName("CreateRecord")
+    .WithDisplayName("Create Host Name Record")
+    .WithTags("DNS")
+    .Produces<DnsRecord>(StatusCodes.Status201Created)
+    .Produces(StatusCodes.Status400BadRequest);
+
+app.MapPost("/dns/bulk",
+        async (ILogger<Program> log, IDnsService commandService, IValidator<DnsRecord> validator,
+            [FromBody] BulkRecordRequest request) =>
+        {
+            log.LogInformation("Creating DnsRecord");
+
+            var newRecords = new List<DnsRecord>();
+
+            foreach (var record in request.Records)
+            {
+                var validationResult = await validator.ValidateAsync(record);
+                if (!validationResult.IsValid)
+                {
+                    return Results.ValidationProblem(validationResult.ToDictionary());
+                }
+
+                var newRecord = await commandService.CreateRecord(record);
+                if (newRecord != null)
+                {
+                    newRecords.Add(newRecord);
+                }
+            }
+
+            return newRecords.Count > 0
+                ? Results.Created($"/dns/", newRecords)
+                : Results.BadRequest();
+        })
+    .WithName("CreateDnsRecords")
+    .WithDisplayName("Bulk Create Host Name Records")
+    .WithTags("DNS")
+    .Produces<IEnumerable<DnsRecord>>(StatusCodes.Status201Created)
+    .Produces(StatusCodes.Status400BadRequest);
 
 app.MapDelete("/dns", async (ILogger<Program> log, IDnsService commandService, IValidator<DnsRecord> validator, [FromBody] DnsRecord record) =>
 {
@@ -149,7 +198,12 @@ app.MapDelete("/dns", async (ILogger<Program> log, IDnsService commandService, I
     }
     var success = await commandService.DeleteRecord(record);
     return success ? Results.Accepted() : Results.BadRequest();
-}).WithName("DeleteHost").WithDisplayName("Delete Host Name Record").WithTags("DNS");
+})
+    .WithName("DeleteRecord")
+    .WithDisplayName("Delete Host Name Record")
+    .WithTags("DNS")
+    .Produces(StatusCodes.Status202Accepted)
+    .Produces(StatusCodes.Status400BadRequest);
 
 
 app.Run();
