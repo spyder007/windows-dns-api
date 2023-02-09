@@ -1,15 +1,7 @@
-﻿using Microsoft.AspNetCore.Razor.TagHelpers;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using Microsoft.Management.Infrastructure;
-using Namotion.Reflection;
-using Serilog;
+﻿using Microsoft.Extensions.Options;
 using spydersoft.windows.dns.Models;
 using spydersoft.windows.dns.Options;
 using System.Management.Automation;
-using System.Security.Policy;
-using System.Text.Json;
-using System.Xml.Linq;
 
 namespace spydersoft.windows.dns.Services
 {

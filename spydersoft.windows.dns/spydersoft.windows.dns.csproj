@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
 	  <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <UserSecretsId>9a01ae4d-932c-4e92-8040-4c2d2b45d4ba</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>

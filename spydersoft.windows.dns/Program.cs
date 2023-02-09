@@ -8,11 +8,7 @@ using Serilog;
 using spydersoft.windows.dns.Models;
 using spydersoft.windows.dns.Services;
 using System.Diagnostics;
-using System.Management.Automation;
-using System.Management.Automation.Runspaces;
 using System.Reflection;
-using System.Configuration;
-using System.Web.Services.Description;
 using spydersoft.windows.dns.Options;
 using FluentValidation;
 
