@@ -27,8 +27,6 @@ namespace spydersoft.windows.dns.Services
 
         private const string DeleteDnsRecordTemplate = "{2} | Remove-DnsServerResourceRecord -zonename {0} -computername {1} -Force";
 
-        private const string RefreshAutomaticStartDelayTemplate = "Get-VM | Select Name, State, AutomaticStartDelay, @{{n='startGroup';e= {{(ConvertFrom-Json $_.Notes).startGroup}}}}, @{{n='delayOffset';e= {{(ConvertFrom-Json $_.Notes).delayOffset}}}} |? {{$_.startGroup -gt 0}} | % {{ Set-VM -name $_.name -AutomaticStartDelay ((($_.startGroup - 1) * {0}) + $_.delayOffset) }}";
-
         private readonly ILogger<DnsService> _logger;
 
         private readonly IPowershellExecutor _executor;
@@ -99,7 +97,7 @@ namespace spydersoft.windows.dns.Services
             try
             {
                 var pipelineObjects = await _executor.ExecuteCommandAndGetPipeline(command);
-                _logger.LogDebug("Found {0} objects", pipelineObjects.Count);
+                _logger.LogDebug("Found {objects} objects", pipelineObjects.Count);
                 if (pipelineObjects.Count == 0)
                 {
                     return null;
@@ -127,7 +125,7 @@ namespace spydersoft.windows.dns.Services
                               DnsRecordExpansion;
 
                 var pipelineObjects = await _executor.ExecuteCommandAndGetPipeline(command);
-                _logger.LogDebug("Found {0} objects", pipelineObjects.Count);
+                _logger.LogDebug("Found {objects} objects", pipelineObjects.Count);
                 var dnsRecords = pipelineObjects.Select(record => BuildDnsRecordFromObject(zone, record));
 
                 return dnsRecords;
@@ -147,7 +145,7 @@ namespace spydersoft.windows.dns.Services
             try
             {
                 var pipelineObjects = await _executor.ExecuteCommandAndGetPipeline(string.Format(GetDnsRecordTemplate, zone, _dnsOptions.DnsServerName, hostName, DnsRecordExpansion));
-                _logger.LogDebug("Found {0} objects", pipelineObjects.Count);
+                _logger.LogDebug("Found {objects} objects", pipelineObjects.Count);
                 if (pipelineObjects.Count == 0)
                 {
                     return null;
@@ -209,7 +207,7 @@ namespace spydersoft.windows.dns.Services
             return !string.IsNullOrWhiteSpace(template) ? string.Format(template, record.ZoneName, _dnsOptions.DnsServerName, record.HostName, record.Data) : string.Empty;
         }
 
-        private DnsRecord BuildDnsRecordFromObject(string zoneName, PSObject record)
+        private static DnsRecord BuildDnsRecordFromObject(string zoneName, PSObject record)
         {
             if (!Enum.TryParse<DnsRecordType>(record.Properties["RecordType"].Value.ToString(), out var recordType))
             {

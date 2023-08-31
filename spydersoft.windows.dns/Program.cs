@@ -20,24 +20,29 @@ var options = new WebApplicationOptions
 
 var builder = WebApplication.CreateBuilder(options);
 
-builder.WebHost.UseUrls("http://0.0.0.0:5000");
+var hostSettings = new HostSettings();
+builder.Configuration.GetSection(HostSettings.SectionName).Bind(hostSettings);
+builder.WebHost.UseUrls($"{hostSettings.Host}:{hostSettings.Port}");
 
 builder.Host.UseSerilog((context, services, configuration) =>
 {
     configuration.ReadFrom.Configuration(context.Configuration);
 });
 
+var identitySettings = new IdentitySettings();
+builder.Configuration.GetSection(IdentitySettings.SectionName).Bind(identitySettings);
+
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-bool configureAuthentication = !string.IsNullOrEmpty(builder.Configuration.GetValue<string>("Identity:AuthorityUrl"));
+bool configureAuthentication = !string.IsNullOrEmpty(identitySettings.AuthorityUrl);
 
 if (configureAuthentication)
 {
     builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         .AddJwtBearer(jwtBearerOptions =>
             {
-                jwtBearerOptions.Authority = builder.Configuration.GetValue<string>("Identity:AuthorityUrl");
-                jwtBearerOptions.Audience = builder.Configuration.GetValue<string>("Identity:ApiName");
+                jwtBearerOptions.Authority = identitySettings.AuthorityUrl;
+                jwtBearerOptions.Audience = identitySettings.ApiName;
 
                 jwtBearerOptions.TokenValidationParameters.ValidTypes = new[] { "at+jwt" };
             }
