@@ -1,6 +1,6 @@
-﻿using spydersoft.windows.dns.Models;
+﻿using Spydersoft.Windows.Dns.Models;
 
-namespace spydersoft.windows.dns.Services
+namespace Spydersoft.Windows.Dns.Services
 {
     public interface IDnsService
     {

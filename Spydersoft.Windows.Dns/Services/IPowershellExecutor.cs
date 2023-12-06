@@ -1,6 +1,6 @@
 ﻿using System.Management.Automation;
 
-namespace spydersoft.windows.dns.Services
+namespace Spydersoft.Windows.Dns.Services
 {
     public interface IPowershellExecutor
     {

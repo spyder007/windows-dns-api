@@ -1,4 +1,4 @@
-﻿namespace spydersoft.windows.dns.Options
+﻿namespace Spydersoft.Windows.Dns.Options
 {
     public class DnsOptions
     {

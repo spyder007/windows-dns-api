@@ -5,11 +5,11 @@ using Microsoft.Extensions.Hosting.WindowsServices;
 using Newtonsoft.Json.Serialization;
 using Newtonsoft.Json;
 using Serilog;
-using spydersoft.windows.dns.Models;
-using spydersoft.windows.dns.Services;
+using Spydersoft.Windows.Dns.Models;
+using Spydersoft.Windows.Dns.Services;
 using System.Diagnostics;
 using System.Reflection;
-using spydersoft.windows.dns.Options;
+using Spydersoft.Windows.Dns.Options;
 using FluentValidation;
 
 var options = new WebApplicationOptions
