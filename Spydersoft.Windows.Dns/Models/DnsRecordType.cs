@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace spydersoft.windows.dns.Models
+namespace Spydersoft.Windows.Dns.Models
 {
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum DnsRecordType

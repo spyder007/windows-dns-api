@@ -3,7 +3,7 @@
     "defaultVariables": "Configuration=Debug",
     "documentGenerator": {
       "aspNetCoreToOpenApi": {
-        "project": "spydersoft.windows.dns.csproj",
+        "project": "Spydersoft.Windows.Dns.csproj",
         "msBuildProjectExtensionsPath": null,
         "configuration": "$(Configuration)",
         "runtime": null,

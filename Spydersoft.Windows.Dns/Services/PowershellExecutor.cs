@@ -1,7 +1,7 @@
 ﻿using System.Management.Automation;
 using System.Management.Automation.Runspaces;
 
-namespace spydersoft.windows.dns.Services
+namespace Spydersoft.Windows.Dns.Services
 {
     public class PowershellExecutor : IPowershellExecutor
     {

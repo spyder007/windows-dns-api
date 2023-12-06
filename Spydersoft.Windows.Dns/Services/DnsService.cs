@@ -1,9 +1,9 @@
 ﻿using Microsoft.Extensions.Options;
-using spydersoft.windows.dns.Models;
-using spydersoft.windows.dns.Options;
+using Spydersoft.Windows.Dns.Models;
+using Spydersoft.Windows.Dns.Options;
 using System.Management.Automation;
 
-namespace spydersoft.windows.dns.Services
+namespace Spydersoft.Windows.Dns.Services
 {
     public class DnsService : IDnsService
     {
@@ -48,7 +48,7 @@ namespace spydersoft.windows.dns.Services
             {
                 return existingRecord;
             }
-            
+
             string command = GetCreateCommandForRecord(record);
 
             if (string.IsNullOrWhiteSpace(command))

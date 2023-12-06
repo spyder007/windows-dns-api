@@ -1,6 +1,6 @@
 ﻿using FluentValidation;
 
-namespace spydersoft.windows.dns.Models
+namespace Spydersoft.Windows.Dns.Models
 {
     public class DnsRecordValidator : AbstractValidator<DnsRecord>
     {
