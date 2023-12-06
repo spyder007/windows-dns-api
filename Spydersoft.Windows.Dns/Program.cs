@@ -1,16 +1,16 @@
+using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Hosting.WindowsServices;
-using Newtonsoft.Json.Serialization;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using Serilog;
 using Spydersoft.Windows.Dns.Models;
+using Spydersoft.Windows.Dns.Options;
 using Spydersoft.Windows.Dns.Services;
 using System.Diagnostics;
 using System.Reflection;
-using Spydersoft.Windows.Dns.Options;
-using FluentValidation;
 
 var options = new WebApplicationOptions
 {

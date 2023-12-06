@@ -48,7 +48,7 @@ namespace Spydersoft.Windows.Dns.Services
             {
                 return existingRecord;
             }
-            
+
             string command = GetCreateCommandForRecord(record);
 
             if (string.IsNullOrWhiteSpace(command))
