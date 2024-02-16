@@ -91,20 +91,19 @@ if (configureAuthentication)
 app.MapGet("/info", async (ILogger<Program> log) =>
 {
     var version = "0.0.0.0";
-    try
+    await Task.Run(() =>
     {
-        await Task.Run(() =>
+        try
         {
             var fileInfo = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location);
-
             version = fileInfo.ProductVersion;
-        });
-    }
-    catch (Exception e)
-    {
-        log.LogError(e, "Error retrieving file version");
-        version = "0.0.0.0";
-    }
+        }
+        catch (Exception e)
+        {
+            log.LogError(e, "Error retrieving file version");
+            version = "0.0.0.0";
+        }
+    });
 
     return Results.Ok(version);
 }).WithName("info").WithDisplayName("Retrieve Application Info").WithTags("Info").Produces<string>();
