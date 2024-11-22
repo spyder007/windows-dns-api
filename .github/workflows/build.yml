@@ -28,7 +28,7 @@ jobs:
             -n github \
             --store-password-in-clear-text \
             -u spyder007 \
-            -p ${{ secrets.GITHUB_TOKEN }} \
+            -p test \
             
       - name: Cache SonarCloud packages
         uses: actions/cache@v3
