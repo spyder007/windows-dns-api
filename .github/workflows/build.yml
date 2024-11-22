@@ -22,6 +22,13 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: ${{ matrix.dotnet-version }}
+      - name: Ensure GitHub NuGet Source
+        run: |
+          dotnet nuget add source ${{ env.NUGET_URL }} \
+            -n github \
+            -u spyder007 \
+            -p ${{ secrets.GITHUB_TOKEN }} \
+            --store-password-in-clear-text
       - name: Cache SonarCloud packages
         uses: actions/cache@v3
         with:
