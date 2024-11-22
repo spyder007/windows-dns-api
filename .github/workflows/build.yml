@@ -24,7 +24,7 @@ jobs:
           dotnet-version: ${{ matrix.dotnet-version }}
       - name: Ensure GitHub NuGet Source
         run: |
-          dotnet nuget add source ${{ env.NUGET_URL }} \
+          dotnet nuget add source https://nuget.pkg.github.com/spydersoft-consulting/index.json \
             -n github \
             -u spyder007 \
             -p ${{ secrets.GITHUB_TOKEN }} \
