@@ -1,16 +1,12 @@
 using FluentValidation;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Hosting.WindowsServices;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 using Serilog;
+using Spydersoft.Platform.Hosting.Options;
+using Spydersoft.Platform.Hosting.StartupExtensions;
 using Spydersoft.Windows.Dns.Models;
 using Spydersoft.Windows.Dns.Options;
 using Spydersoft.Windows.Dns.Services;
-using System.Diagnostics;
-using System.Reflection;
 
 var options = new WebApplicationOptions
 {
@@ -29,31 +25,12 @@ builder.Host.UseSerilog((context, services, configuration) =>
     configuration.ReadFrom.Configuration(context.Configuration);
 });
 
-var identitySettings = new IdentitySettings();
-builder.Configuration.GetSection(IdentitySettings.SectionName).Bind(identitySettings);
 
-// Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-bool configureAuthentication = !string.IsNullOrEmpty(identitySettings.AuthorityUrl);
+AppHealthCheckOptions healthCheckOptions = builder.AddSpydersoftHealthChecks();
+builder.AddSpydersoftTelemetry(typeof(Program).Assembly)
+    .AddSpydersoftSerilog();
 
-if (configureAuthentication)
-{
-    builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-        .AddJwtBearer(jwtBearerOptions =>
-            {
-                jwtBearerOptions.Authority = identitySettings.AuthorityUrl;
-                jwtBearerOptions.Audience = identitySettings.ApiName;
-
-                jwtBearerOptions.TokenValidationParameters.ValidTypes = new[] { "at+jwt" };
-            }
-        );
-    builder.Services.AddAuthorization(cfg =>
-    {
-        cfg.FallbackPolicy = new AuthorizationPolicyBuilder()
-            .RequireAuthenticatedUser()
-            .Build();
-    });
-}
+bool authInstalled = builder.AddSpydersoftIdentity();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.Configure<DnsOptions>(builder.Configuration.GetSection(DnsOptions.SectionName));
@@ -66,48 +43,21 @@ builder.Services.AddOpenApiDocument(doc =>
     doc.DocumentName = "windows.dns";
     doc.Title = "Windows DNS API";
     doc.Description = "API for interacting with Windows DNS";
-    doc.SerializerSettings = new JsonSerializerSettings
-    {
-        ContractResolver = new CamelCasePropertyNamesContractResolver()
-    };
 });
 
 builder.Host.UseWindowsService();
 
 var app = builder.Build();
 
+app.UseSpydersoftHealthChecks(healthCheckOptions);
 app.UseOpenApi();
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwaggerUi3();
+    app.UseSwaggerUi();
 }
 
-if (configureAuthentication)
-{
-    app.UseAuthentication();
-    app.UseAuthorization();
-}
-
-app.MapGet("/info", async (ILogger<Program> log) =>
-{
-    var version = "0.0.0.0";
-    try
-    {
-        await Task.Run(() =>
-        {
-            var fileInfo = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location);
-
-            version = fileInfo.ProductVersion;
-        });
-    }
-    catch (Exception e)
-    {
-        log.LogError(e, "Error retrieving file version");
-        version = "0.0.0.0";
-    }
-
-    return Results.Ok(version);
-}).WithName("info").WithDisplayName("Retrieve Application Info").WithTags("Info").Produces<string>();
+app.UseAuthentication(authInstalled).
+    UseAuthorization(authInstalled);
 
 app.MapGet("/dns",
         async (ILogger<Program> log, IDnsService commandService, string? zoneName) =>
@@ -124,7 +74,7 @@ app.MapGet("/dns",
 
 app.MapGet("/dns/{hostName}", async (ILogger<Program> log, IDnsService commandService, [FromRoute] string hostName, [FromQuery] string? zoneName) =>
     {
-        log.LogInformation("Fielding DNS Record Request for  {hostName} in zone {zoneName}", hostName, zoneName);
+        log.LogInformation("Fielding DNS Record Request for  {HostName} in zone {ZoneName}", hostName, zoneName);
         var dnsRecord = await commandService.GetRecordsByHostname(hostName, zoneName);
         return dnsRecord == null ? Results.NotFound() : Results.Ok(dnsRecord);
     })
@@ -207,4 +157,4 @@ app.MapDelete("/dns", async (ILogger<Program> log, IDnsService commandService, I
     .Produces(StatusCodes.Status400BadRequest);
 
 
-app.Run();
+await app.RunAsync();
