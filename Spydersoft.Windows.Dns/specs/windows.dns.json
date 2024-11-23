@@ -7,12 +7,12 @@
     "version": "1.0.0"
   },
   "paths": {
-    "/dns": {
+    "/Dns": {
       "get": {
         "tags": [
-          "DNS"
+          "Dns"
         ],
-        "operationId": "GetDnsRecords",
+        "operationId": "Dns_GetAll",
         "parameters": [
           {
             "name": "zoneName",
@@ -37,14 +37,24 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         }
       },
       "post": {
         "tags": [
-          "DNS"
+          "Dns"
         ],
-        "operationId": "CreateRecord",
+        "operationId": "Dns_Post",
         "requestBody": {
           "x-name": "record",
           "content": {
@@ -69,15 +79,22 @@
             }
           },
           "400": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         }
       },
       "delete": {
         "tags": [
-          "DNS"
+          "Dns"
         ],
-        "operationId": "DeleteRecord",
+        "operationId": "Dns_Delete",
         "requestBody": {
           "x-name": "record",
           "content": {
@@ -95,17 +112,24 @@
             "description": ""
           },
           "400": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         }
       }
     },
-    "/dns/{hostName}": {
+    "/Dns/{hostName}": {
       "get": {
         "tags": [
-          "DNS"
+          "Dns"
         ],
-        "operationId": "GetRecordByHostname",
+        "operationId": "Dns_Get",
         "parameters": [
           {
             "name": "hostName",
@@ -132,26 +156,30 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DnsRecord"
-                  }
+                  "$ref": "#/components/schemas/DnsRecord"
                 }
               }
             }
           },
-          "404": {
-            "description": ""
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         }
       }
     },
-    "/dns/bulk": {
+    "/Dns/bulk": {
       "post": {
         "tags": [
-          "DNS"
+          "Dns"
         ],
-        "operationId": "CreateDnsRecords",
+        "operationId": "Dns_BulkUpdate",
         "requestBody": {
           "x-name": "request",
           "content": {
@@ -179,7 +207,14 @@
             }
           },
           "400": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         }
       }
@@ -218,6 +253,35 @@
           "AAAA",
           "CNAME"
         ]
+      },
+      "ProblemDetails": {
+        "type": "object",
+        "additionalProperties": {
+          "nullable": true
+        },
+        "properties": {
+          "type": {
+            "type": "string",
+            "nullable": true
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "detail": {
+            "type": "string",
+            "nullable": true
+          },
+          "instance": {
+            "type": "string",
+            "nullable": true
+          }
+        }
       },
       "BulkRecordRequest": {
         "type": "object",

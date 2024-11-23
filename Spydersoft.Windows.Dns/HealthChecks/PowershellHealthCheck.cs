@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Spydersoft.Platform.Attributes;
-using System.Management.Automation.Runspaces;
 using System.Management.Automation;
+using System.Management.Automation.Runspaces;
 
 namespace Spydersoft.Windows.Dns.HealthChecks
 {
